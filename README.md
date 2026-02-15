@@ -1,4 +1,4 @@
-## Update 01/24/2026
+## Update 02/14/2026
 
 ---
 
@@ -6,7 +6,7 @@ This repository contains the **MCP (Model Context Protocol) server** for Unreal 
 
 We've also built **The Flop Agent**, a fully autonomous AI agent that runs inside Unreal and goes far beyond the MCP server with full Blueprint editing, world building, and chat directly in the editor.
 
-## v0.7 Now Released - [https://flopperam.com/](https://flopperam.com/)
+## FLop Agent v0.7 Now Released - [https://flopperam.com/](https://flopperam.com/)
 
 ### FULL BLUEPRINT CREATION AND EDITING
 Full Blueprint creation and modification is now available inside the Unreal Editor. The agent goes beyond analysis and directly builds and edits Blueprint logic from natural language. You describe what you want. The agent handles structure, nodes, connections, and verification.
