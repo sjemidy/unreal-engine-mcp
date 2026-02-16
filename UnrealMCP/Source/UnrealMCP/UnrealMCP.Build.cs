@@ -53,6 +53,7 @@ public class UnrealMCP : ModuleRules
 			{
 				"EditorScriptingUtilities",
 				"EditorSubsystem",
+				"LevelEditor",
 				"Slate",
 				"SlateCore",
 				"Kismet",

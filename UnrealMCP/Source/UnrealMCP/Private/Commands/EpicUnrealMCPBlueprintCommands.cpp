@@ -25,6 +25,10 @@
 #include "UObject/FieldPath.h"
 #include "EditorAssetLibrary.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Subsystems/AssetEditorSubsystem.h"
+#include "LevelEditorSubsystem.h"
+#include "Editor.h"
+#include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
 #include "Kismet/GameplayStatics.h"
@@ -100,6 +104,11 @@ TSharedPtr<FJsonObject> FEpicUnrealMCPBlueprintCommands::HandleCommand(const FSt
     else if (CommandType == TEXT("get_blueprint_function_details"))
     {
         return HandleGetBlueprintFunctionDetails(Params);
+    }
+    // Asset editor commands
+    else if (CommandType == TEXT("open_asset_in_editor"))
+    {
+        return HandleOpenAssetInEditor(Params);
     }
 
     return FEpicUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Unknown blueprint command: %s"), *CommandType));
@@ -1639,5 +1648,66 @@ TSharedPtr<FJsonObject> FEpicUnrealMCPBlueprintCommands::HandleGetBlueprintFunct
     }
 
     ResultObj->SetBoolField(TEXT("success"), true);
+    return ResultObj;
+}
+
+TSharedPtr<FJsonObject> FEpicUnrealMCPBlueprintCommands::HandleOpenAssetInEditor(const TSharedPtr<FJsonObject>& Params)
+{
+    FString AssetPath;
+    if (!Params->TryGetStringField(TEXT("asset_path"), AssetPath))
+    {
+        return FEpicUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Missing 'asset_path' parameter"));
+    }
+
+    UObject* Asset = UEditorAssetLibrary::LoadAsset(AssetPath);
+    if (!Asset)
+    {
+        return FEpicUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Failed to load asset: %s"), *AssetPath));
+    }
+
+    // Cache name and class before any operation that could invalidate the pointer
+    const FString AssetName = Asset->GetName();
+    const FString AssetClassName = Asset->GetClass()->GetName();
+
+    // Levels (UWorld) need to be opened via the level editor, not the asset editor
+    if (Asset->IsA<UWorld>())
+    {
+        ULevelEditorSubsystem* LevelEditorSubsystem = GEditor->GetEditorSubsystem<ULevelEditorSubsystem>();
+        if (!LevelEditorSubsystem)
+        {
+            return FEpicUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Failed to get LevelEditorSubsystem"));
+        }
+
+        bool bLoaded = LevelEditorSubsystem->LoadLevel(AssetPath);
+        if (!bLoaded)
+        {
+            return FEpicUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Failed to load level: %s"), *AssetPath));
+        }
+
+        TSharedPtr<FJsonObject> ResultObj = MakeShared<FJsonObject>();
+        ResultObj->SetBoolField(TEXT("success"), true);
+        ResultObj->SetStringField(TEXT("asset_path"), AssetPath);
+        ResultObj->SetStringField(TEXT("asset_name"), AssetName);
+        ResultObj->SetStringField(TEXT("asset_class"), AssetClassName);
+        return ResultObj;
+    }
+
+    UAssetEditorSubsystem* AssetEditorSubsystem = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>();
+    if (!AssetEditorSubsystem)
+    {
+        return FEpicUnrealMCPCommonUtils::CreateErrorResponse(TEXT("Failed to get AssetEditorSubsystem"));
+    }
+
+    bool bOpened = AssetEditorSubsystem->OpenEditorForAsset(Asset);
+    if (!bOpened)
+    {
+        return FEpicUnrealMCPCommonUtils::CreateErrorResponse(FString::Printf(TEXT("Failed to open editor for asset: %s"), *AssetPath));
+    }
+
+    TSharedPtr<FJsonObject> ResultObj = MakeShared<FJsonObject>();
+    ResultObj->SetBoolField(TEXT("success"), true);
+    ResultObj->SetStringField(TEXT("asset_path"), AssetPath);
+    ResultObj->SetStringField(TEXT("asset_name"), AssetName);
+    ResultObj->SetStringField(TEXT("asset_class"), AssetClassName);
     return ResultObj;
 }

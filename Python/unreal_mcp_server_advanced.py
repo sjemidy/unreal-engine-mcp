@@ -697,6 +697,34 @@ def read_blueprint_content(
         return {"success": False, "message": str(e)}
 
 @mcp.tool()
+def open_asset_in_editor(asset_path: str) -> Dict[str, Any]:
+    """
+    Open any asset in the Unreal Editor UI.
+
+    Works with Blueprints, Materials, Data Tables, Niagara Systems, and any other
+    asset type that has an editor. The asset will be loaded and its editor window
+    opened in the foreground.
+
+    Args:
+        asset_path: Full content path to the asset (e.g., "/Game/Blueprints/BP_MyActor")
+
+    Returns:
+        Dictionary with success status, asset name, and asset class
+    """
+    unreal = get_unreal_connection()
+    if not unreal:
+        return {"success": False, "message": "Failed to connect to Unreal Engine"}
+
+    try:
+        params = {"asset_path": asset_path}
+        logger.info(f"Opening asset in editor: {asset_path}")
+        response = unreal.send_command("open_asset_in_editor", params)
+        return response or {"success": False, "message": "No response from Unreal"}
+    except Exception as e:
+        logger.error(f"open_asset_in_editor error: {e}")
+        return {"success": False, "message": str(e)}
+
+@mcp.tool()
 def analyze_blueprint_graph(
     blueprint_path: str,
     graph_name: str = "EventGraph",

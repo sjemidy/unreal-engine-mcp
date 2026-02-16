@@ -37,5 +37,7 @@ private:
     TSharedPtr<FJsonObject> HandleGetBlueprintVariableDetails(const TSharedPtr<FJsonObject>& Params);
     TSharedPtr<FJsonObject> HandleGetBlueprintFunctionDetails(const TSharedPtr<FJsonObject>& Params);
 
+    // Asset editor functions
+    TSharedPtr<FJsonObject> HandleOpenAssetInEditor(const TSharedPtr<FJsonObject>& Params);
 
 }; 
